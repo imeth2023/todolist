@@ -1,3 +1,4 @@
+/* Set the font family, background color, margin, and padding for the body */
 body {
     font-family: Arial, sans-serif;
     background-color: #f4f4f4;
@@ -5,6 +6,7 @@ body {
     padding: 0;
 }
 
+/* Set the width, margin, padding, background, box shadow, and border radius for the container */
 .container {
     width: 80%;
     margin: 50px auto;
@@ -14,20 +16,24 @@ body {
     border-radius: 8px;
 }
 
+/* Set the text alignment and color for the h1 heading */
 h1 {
     text-align: center;
     color: #333;
 }
 
+/* Set the color for the h3 heading */
 h3 {
     color: #333;
 }
 
+/* Set the margin bottom and text alignment for the form */
 form {
     margin-bottom: 20px;
     text-align: center;
 }
 
+/* Set the width, padding, margin right, border, and border radius for the input fields */
 input[type="text"],
 input[type="password"],
 input[type="date"],
@@ -40,6 +46,7 @@ input[type="number"] {
     box-sizing: border-box;
 }
 
+/* Set the padding, background color, color, border, border radius, and cursor for the button */
 button {
     padding: 10px 20px;
     background-color: #5cb85c;
@@ -50,10 +57,12 @@ button {
     box-sizing: border-box;
 }
 
+/* Set the background color for the button on hover */
 button:hover {
     background-color: #4cae4c;
 }
 
+/* Set the border, padding, and border radius for the todoTasks and completedTasks */
 #todoTasks, #completedTasks {
     border: 1px solid #ccc;
     padding: 10px;
@@ -61,30 +70,36 @@ button:hover {
     margin-bottom: 20px;
 }
 
+/* Set the padding and border bottom for the todoTasks and completedTasks divs */
 #todoTasks div, #completedTasks div {
     padding: 10px;
     border-bottom: 1px solid #ccc;
 }
 
+/* Remove the border bottom for the last child of todoTasks and completedTasks divs */
 #todoTasks div:last-child, #completedTasks div:last-child {
     border-bottom: none;
 }
 
+/* Set the color and text decoration for links */
 a {
     color: #337ab7;
     text-decoration: none;
 }
 
+/* Set the text decoration for links on hover */
 a:hover {
     text-decoration: underline;
 }
 
+/* Set the color, font style, and text alignment for paragraphs */
 p {
     color: #777;
     font-style: italic;
     text-align: center;
 }
 
+/* Set the border, height, background color, and margin for the horizontal rule */
 hr {
     border: none;
     height: 1px;

@@ -14,6 +14,7 @@ def initialize_db():
     conn = get_db_connection()
     cursor = conn.cursor()
     
+    # Create 'users' table if it doesn't exist
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -22,6 +23,7 @@ def initialize_db():
     )
     """)
     
+    # Create 'tasks' table if it doesn't exist
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS tasks (
         tid INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -33,6 +35,7 @@ def initialize_db():
     )
     """)
     
+    # Create 'done' table if it doesn't exist
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS done (
         did INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -49,32 +52,33 @@ def initialize_db():
     conn.close()
 
 # User Authentication Routes
+
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
-        data = request.form
+        data = request.get_json()
         username = data.get('username')
         password = generate_password_hash(data.get('password'))
         
         conn = get_db_connection()
         cursor = conn.cursor()
         try:
+            # Insert new user into 'users' table
             cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
             conn.commit()
         except sqlite3.IntegrityError:
-            flash('Username already exists')
-            return redirect('/signup')
+            return jsonify({'success': False, 'message': 'Username already exists'}), 400
         finally:
             cursor.close()
             conn.close()
         
-        return redirect('/login')
+        return jsonify({'success': True}), 201
     return render_template('signup.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        data = request.form
+        data = request.get_json()
         username = data.get('username')
         password = data.get('password')
         
@@ -87,10 +91,9 @@ def login():
         
         if user and check_password_hash(user['password'], password):
             session['user_id'] = user['id']
-            return redirect('/')
+            return jsonify({'success': True}), 200
         
-        flash('Invalid username or password')
-        return redirect('/login')
+        return jsonify({'success': False, 'message': 'Invalid username or password'}), 401
     return render_template('login.html')
 
 @app.route('/logout', methods=['GET'])
@@ -99,10 +102,11 @@ def logout():
     return jsonify({'success': True})
 
 # Task Routes
+
 @app.route('/addTask', methods=['POST'])
 def add_task():
     if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'Unauthorized'})
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
     
     task = request.json.get('task')
     due_date = request.json.get('due_date')
@@ -116,12 +120,12 @@ def add_task():
     cursor.close()
     conn.close()
     
-    return jsonify({'success': True})
+    return jsonify({'success': True}), 201
 
 @app.route('/getTasks', methods=['GET'])
 def get_tasks():
     if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'Unauthorized'})
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
     
     sort_by = request.args.get('sort_by', 'priority')
     filter_by_date = request.args.get('filter_by_date')
@@ -147,12 +151,12 @@ def get_tasks():
     cursor.close()
     conn.close()
     
-    return jsonify({'tasks': [dict(task) for task in tasks], 'done': [dict(task) for task in done]})
+    return jsonify({'tasks': [dict(task) for task in tasks], 'done': [dict(task) for task in done]}), 200
 
 @app.route('/move-to-done/<int:id>/<string:task_name>', methods=['POST'])
 def move_to_done(id, task_name):
     if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'Unauthorized'})
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
     
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -162,12 +166,12 @@ def move_to_done(id, task_name):
     cursor.close()
     conn.close()
     
-    return jsonify({'success': True})
+    return jsonify({'success': True}), 200
 
 @app.route('/move-to-todo/<int:id>/<string:task_name>', methods=['POST'])
 def move_to_todo(id, task_name):
     if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'Unauthorized'})
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
     
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -177,12 +181,12 @@ def move_to_todo(id, task_name):
     cursor.close()
     conn.close()
     
-    return jsonify({'success': True})
+    return jsonify({'success': True}), 200
 
 @app.route('/deleteTask/<int:id>', methods=['DELETE'])
 def deleteTask(id):
     if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'Unauthorized'})
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
     
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -191,12 +195,12 @@ def deleteTask(id):
     cursor.close()
     conn.close()
     
-    return jsonify({'success': True})
+    return jsonify({'success': True}), 200
 
 @app.route('/delete-completed/<int:id>', methods=['DELETE'])
 def deleteCompletedTask(id):
     if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'Unauthorized'})
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
     
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -205,12 +209,12 @@ def deleteCompletedTask(id):
     cursor.close()
     conn.close()
     
-    return jsonify({'success': True})
+    return jsonify({'success': True}), 200
 
 @app.route('/updateTask/<int:id>', methods=['PUT'])
 def updateTask(id):
     if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'Unauthorized'})
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
     
     updated_task = request.json.get('updated_task')
     
@@ -221,12 +225,12 @@ def updateTask(id):
     cursor.close()
     conn.close()
     
-    return jsonify({'success': True})
+    return jsonify({'success': True}), 200
 
 @app.route('/updateTaskOrder', methods=['PUT'])
 def updateTaskOrder():
     if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'Unauthorized'})
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
     
     task_id = request.json.get('task_id')
     new_index = request.json.get('new_index')
@@ -238,7 +242,7 @@ def updateTaskOrder():
     cursor.close()
     conn.close()
     
-    return jsonify({'success': True})
+    return jsonify({'success': True}), 200
 
 @app.route('/checkAuth', methods=['GET'])
 def check_auth():
