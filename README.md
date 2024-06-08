@@ -23,7 +23,7 @@ This is a simple Todo application built using Python, Flask, and SQLite. The app
 1. Clone the repository:
 
     ```bash
-    git clone https://github.com/pj8912/todo-app.git
+    git clone https://github.com/imeth2023/todolist
     cd todo-app
     ```
 
