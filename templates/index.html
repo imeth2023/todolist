@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-Do List</title>
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
+    <script src="/static/script.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <h1>To-Do List</h1>
+        
+        <button id="logoutBtn">Logout</button>
+
+        <!-- Task Form -->
+        <form id="addTaskForm">
+            <input type="text" id="taskInput" placeholder="Task">
+            <input type="date" id="dueDateInput" placeholder="Due Date">
+            <input type="number" id="priorityInput" placeholder="Priority">
+            <button type="submit">Add Task</button>
+        </form>
+        
+        <!-- Sorting and Filtering -->
+        <div id="sortFilter">
+            <select id="sortBy">
+                <option value="priority">Priority</option>
+                <option value="due_date">Due Date</option>
+            </select>
+            <input type="date" id="filterByDate">
+            <button onclick="loadTasks()">Apply</button>
+        </div>
+        
+        <!-- Todo Tasks -->
+        <div>
+            <h3>Todo Tasks</h3>
+            <br>
+            <div id="todoTasks">
+                <!-- Todo tasks will be dynamically inserted here -->
+            </div>
+        </div>
+        <hr>
+        <!-- Completed Tasks -->
+        <div>
+            <h3>Tasks Completed</h3>
+            <div id="completedTasks">
+                <!-- Completed tasks will be dynamically inserted here -->
+            </div>
+        </div>
+    </div>
+</body>
+</html>
