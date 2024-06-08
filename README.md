@@ -1,7 +1,7 @@
 
 # Todo App
 
-This is a simple Todo application built using Python, Flask, and SQLite. The application allows users to sign up, log in, add tasks, view tasks, mark tasks as completed, move tasks back to the todo list, and delete tasks. The data is stored in a SQLite database, and the front-end is rendered using the Jinja2 template engine. The application uses the Fetch API for client-server communication.
+This is a simple Todo application built using Python, Flask, and SQLite. The application allows users to sign up, log in, add tasks, view tasks, mark tasks as completed, move tasks back to the todo list, and delete tasks. The data is stored in a SQLite database. The application uses the Fetch API for client-server communication.
 
 ## Features
 
