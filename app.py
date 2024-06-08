@@ -41,6 +41,8 @@ def initialize_db():
         did INTEGER PRIMARY KEY AUTOINCREMENT,
         task TEXT NOT NULL,
         task_id INTEGER,
+        due_date DATE,
+        priority INTEGER,
         user_id INTEGER,
         FOREIGN KEY(task_id) REFERENCES tasks(tid),
         FOREIGN KEY(user_id) REFERENCES users(id)
@@ -52,7 +54,6 @@ def initialize_db():
     conn.close()
 
 # User Authentication Routes
-
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
@@ -63,7 +64,6 @@ def signup():
         conn = get_db_connection()
         cursor = conn.cursor()
         try:
-            # Insert new user into 'users' table
             cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
             conn.commit()
         except sqlite3.IntegrityError:
@@ -160,7 +160,7 @@ def move_to_done(id, task_name):
     
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO done(task, task_id, user_id) VALUES(?, ?, ?)", (task_name, id, session['user_id']))
+    cursor.execute("INSERT INTO done(task, task_id, due_date, priority, user_id) SELECT task, tid, due_date, priority, user_id FROM tasks WHERE tid = ? AND user_id = ?", (id, session['user_id']))
     cursor.execute("DELETE FROM tasks WHERE tid = ? AND user_id = ?", (id, session['user_id']))
     conn.commit()
     cursor.close()
@@ -168,19 +168,24 @@ def move_to_done(id, task_name):
     
     return jsonify({'success': True}), 200
 
-@app.route('/move-to-todo/<int:id>/<string:task_name>', methods=['POST'])
-def move_to_todo(id, task_name):
+@app.route('/move-to-todo', methods=['POST'])
+def move_to_todo():
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Unauthorized'}), 401
-    
+
+    data = request.json
+    task_name = data.get('task')
+    due_date = data.get('due_date')
+    priority = data.get('priority')
+
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO tasks(task, user_id) VALUES(?, ?)", (task_name, session['user_id']))
-    cursor.execute("DELETE FROM done WHERE did = ? AND user_id = ?", (id, session['user_id']))
+    cursor.execute("INSERT INTO tasks(task, due_date, priority, user_id) VALUES(?, ?, ?, ?)", 
+                   (task_name, due_date, priority, session['user_id']))
     conn.commit()
     cursor.close()
     conn.close()
-    
+
     return jsonify({'success': True}), 200
 
 @app.route('/deleteTask/<int:id>', methods=['DELETE'])

@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function() {
             var itemEl = evt.item;
             var taskId = itemEl.getAttribute('data-id');
             if (evt.to.id === 'todoTasks') {
-                moveToTodo(taskId); // Call the moveToTodo function
+                copyToTodo(taskId); // Call the copyToTodo function
             }
         },
         dataIdAttr: 'data-id'
@@ -81,6 +81,9 @@ function loadTasks() {
                 data.tasks.forEach(task => {
                     const taskElement = document.createElement('div');
                     taskElement.setAttribute('data-id', task.tid);
+                    taskElement.setAttribute('data-task', task.task);
+                    taskElement.setAttribute('data-due-date', task.due_date);
+                    taskElement.setAttribute('data-priority', task.priority);
                     taskElement.innerHTML = `${task.task} [<a href="#" onclick="moveToDone(${task.tid}, '${task.task}')">done</a> | <a href="#" onclick="deleteTask(${task.tid})">delete</a>] <form style="display:inline;" onsubmit="updateTask(${task.tid}); return false;"><input type="text" value="${task.task}" id="updateInput${task.tid}"><button type="submit">Update</button></form>`;
                     todoTasks.appendChild(taskElement);
                 });
@@ -92,6 +95,9 @@ function loadTasks() {
                 data.done.forEach(task => {
                     const taskElement = document.createElement('div');
                     taskElement.setAttribute('data-id', task.did);
+                    taskElement.setAttribute('data-task', task.task);
+                    taskElement.setAttribute('data-due-date', task.due_date || '');
+                    taskElement.setAttribute('data-priority', task.priority || '');
                     taskElement.innerHTML = `${task.task} [<a href="#" onclick="deleteCompletedTask(${task.did})">delete</a>]`;
                     completedTasks.appendChild(taskElement);
                 });
@@ -144,11 +150,19 @@ function moveToDone(id, taskName) {
       });
 }
 
-// Function to move a task to the todo list
-function moveToTodo(id) {
-    const taskName = document.querySelector(`#completedTasks [data-id="${id}"]`).innerText.split(' [')[0];
-    fetch(`/move-to-todo/${id}/${taskName}`, {
-        method: 'POST'
+// Function to copy a task to the todo list
+function copyToTodo(id) {
+    const taskElement = document.querySelector(`#completedTasks [data-id="${id}"]`);
+    const taskName = taskElement.getAttribute('data-task');
+    const dueDate = taskElement.getAttribute('data-due-date');
+    const priority = taskElement.getAttribute('data-priority');
+
+    fetch('/move-to-todo', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ task: taskName, due_date: dueDate, priority: priority })
     }).then(response => response.json())
       .then(data => {
           if (data.success) {
@@ -186,7 +200,7 @@ function updateTask(id) {
       });
 }
 
-// Function to update the order of tasks
+// Function to update the order of a task
 function updateTaskOrder(taskId, newIndex) {
     fetch(`/updateTaskOrder`, {
         method: 'PUT',

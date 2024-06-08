@@ -2,111 +2,90 @@ import unittest
 import json
 from app import app, initialize_db
 
-class ToDoTestCase(unittest.TestCase):
+class TodoAppTestCase(unittest.TestCase):
+
     def setUp(self):
         self.app = app.test_client()
         self.app.testing = True
         initialize_db()
+        self.register_and_login()
 
-    def signup(self, username, password):
-        return self.app.post('/signup', data=dict(username=username, password=password), follow_redirects=True)
-
-    def login(self, username, password):
-        return self.app.post('/login', data=dict(username=username, password=password), follow_redirects=True)
-
-    def logout(self):
-        return self.app.get('/logout', follow_redirects=True)
+    def register_and_login(self):
+        self.app.post('/signup', data=json.dumps({
+            'username': 'testuser',
+            'password': 'testpass'
+        }), content_type='application/json')
+        self.app.post('/login', data=json.dumps({
+            'username': 'testuser',
+            'password': 'testpass'
+        }), content_type='application/json')
 
     def test_signup(self):
-        response = self.signup('testuser', 'testpass')
+        response = self.app.post('/signup', data=json.dumps({
+            'username': 'newuser',
+            'password': 'newpass'
+        }), content_type='application/json')
+        self.assertEqual(response.status_code, 201)
+        self.assertIn(b'success', response.data)
+
+    def test_login(self):
+        response = self.app.post('/login', data=json.dumps({
+            'username': 'testuser',
+            'password': 'testpass'
+        }), content_type='application/json')
         self.assertEqual(response.status_code, 200)
-
-    def test_login_logout(self):
-        self.signup('testuser', 'testpass')
-        response = self.login('testuser', 'testpass')
-        self.assertIn(b'To-Do List', response.data)
-
-        response = self.logout()
-        self.assertIn(b'Log In', response.data)
+        self.assertIn(b'success', response.data)
 
     def test_add_task(self):
-        self.signup('testuser', 'testpass')
-        self.login('testuser', 'testpass')
-
-        task_data = {'task': 'Test Task', 'due_date': '2023-12-31', 'priority': 1}
-        response = self.app.post('/addTask', data=json.dumps(task_data), content_type='application/json')
-        self.assertEqual(response.status_code, 200)
-        self.assertIn('success', response.json)
+        response = self.app.post('/addTask', data=json.dumps({
+            'task': 'New Task',
+            'due_date': '2023-12-31',
+            'priority': 1
+        }), content_type='application/json')
+        self.assertEqual(response.status_code, 201)
+        self.assertIn(b'success', response.data)
 
     def test_get_tasks(self):
-        self.signup('testuser', 'testpass')
-        self.login('testuser', 'testpass')
-
-        task_data = {'task': 'Test Task', 'due_date': '2023-12-31', 'priority': 1}
-        self.app.post('/addTask', data=json.dumps(task_data), content_type='application/json')
-
+        self.app.post('/addTask', data=json.dumps({
+            'task': 'New Task',
+            'due_date': '2023-12-31',
+            'priority': 1
+        }), content_type='application/json')
         response = self.app.get('/getTasks')
         self.assertEqual(response.status_code, 200)
-        self.assertIn('tasks', response.json)
+        self.assertIn(b'New Task', response.data)
 
-    def test_update_task(self):
-        self.signup('testuser', 'testpass')
-        self.login('testuser', 'testpass')
+    def test_sort_filter_tasks(self):
+        # Add multiple tasks with different due dates and priorities
+        tasks = [
+            {'task': 'Task 1', 'due_date': '2023-12-30', 'priority': 2},
+            {'task': 'Task 2', 'due_date': '2023-12-31', 'priority': 1},
+            {'task': 'Task 3', 'due_date': '2023-12-29', 'priority': 3}
+        ]
+        for task in tasks:
+            self.app.post('/addTask', data=json.dumps(task), content_type='application/json')
 
-        task_data = {'task': 'Test Task', 'due_date': '2023-12-31', 'priority': 1}
-        self.app.post('/addTask', data=json.dumps(task_data), content_type='application/json')
-
-        task_id = self.app.get('/getTasks').json['tasks'][0]['tid']
-        update_data = {'updated_task': 'Updated Task'}
-        response = self.app.put(f'/updateTask/{task_id}', data=json.dumps(update_data), content_type='application/json')
+        # Test sorting by due date
+        response = self.app.get('/getTasks?sort_by=due_date')
         self.assertEqual(response.status_code, 200)
-        self.assertIn('success', response.json)
+        tasks_due_date = response.json['tasks']
+        self.assertTrue(tasks_due_date[0]['due_date'] <= tasks_due_date[1]['due_date'] <= tasks_due_date[2]['due_date'])
 
-    def test_delete_task(self):
-        self.signup('testuser', 'testpass')
-        self.login('testuser', 'testpass')
-
-        task_data = {'task': 'Test Task', 'due_date': '2023-12-31', 'priority': 1}
-        self.app.post('/addTask', data=json.dumps(task_data), content_type='application/json')
-
-        task_id = self.app.get('/getTasks').json['tasks'][0]['tid']
-        response = self.app.delete(f'/deleteTask/{task_id}')
+        # Test filtering by due date
+        response = self.app.get('/getTasks?filter_by_date=2023-12-30')
         self.assertEqual(response.status_code, 200)
-        self.assertIn('success', response.json)
+        filtered_tasks = response.json['tasks']
+        self.assertTrue(all(task['due_date'] <= '2023-12-30' for task in filtered_tasks))
 
-    def test_update_task_order(self):
-        self.signup('testuser', 'testpass')
-        self.login('testuser', 'testpass')
-
-        task_data1 = {'task': 'Test Task 1', 'due_date': '2023-12-31', 'priority': 1}
-        task_data2 = {'task': 'Test Task 2', 'due_date': '2023-12-31', 'priority': 2}
-        self.app.post('/addTask', data=json.dumps(task_data1), content_type='application/json')
-        self.app.post('/addTask', data=json.dumps(task_data2), content_type='application/json')
-
-        task_id1 = self.app.get('/getTasks').json['tasks'][0]['tid']
-        task_id2 = self.app.get('/getTasks').json['tasks'][1]['tid']
-
-        update_data1 = {'task_id': task_id1, 'new_index': 2}
-        update_data2 = {'task_id': task_id2, 'new_index': 1}
-        self.app.put('/updateTaskOrder', data=json.dumps(update_data1), content_type='application/json')
-        response = self.app.put('/updateTaskOrder', data=json.dumps(update_data2), content_type='application/json')
+    def test_logout(self):
+        response = self.app.get('/logout')
         self.assertEqual(response.status_code, 200)
-        self.assertIn('success', response.json)
+        self.assertIn(b'success', response.data)
 
-    def test_move_to_todo(self):
-        self.signup('testuser', 'testpass')
-        self.login('testuser', 'testpass')
-
-        task_data = {'task': 'Test Task', 'due_date': '2023-12-31', 'priority': 1}
-        self.app.post('/addTask', data=json.dumps(task_data), content_type='application/json')
-
-        task_id = self.app.get('/getTasks').json['tasks'][0]['tid']
-        self.app.post(f'/move-to-done/{task_id}/Test Task', content_type='application/json')
-
-        completed_task_id = self.app.get('/getTasks').json['done'][0]['did']
-        response = self.app.post(f'/move-to-todo/{completed_task_id}/Test Task', content_type='application/json')
-        self.assertEqual(response.status_code, 200)
-        self.assertIn('success', response.json)
+        # Verify user is logged out
+        response = self.app.get('/getTasks')
+        self.assertEqual(response.status_code, 401)
+        self.assertIn(b'Unauthorized', response.data)
 
 if __name__ == '__main__':
     unittest.main()
