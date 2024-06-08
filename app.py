@@ -1,4 +1,4 @@
-from flask import Flask, redirect, render_template, request, jsonify, session
+from flask import Flask, redirect, render_template, request, jsonify, session, flash
 from werkzeug.security import generate_password_hash, check_password_hash
 import sqlite3
 
@@ -62,7 +62,8 @@ def signup():
             cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
             conn.commit()
         except sqlite3.IntegrityError:
-            return jsonify({'success': False, 'message': 'Username already exists'})
+            flash('Username already exists')
+            return redirect('/signup')
         finally:
             cursor.close()
             conn.close()
@@ -88,7 +89,8 @@ def login():
             session['user_id'] = user['id']
             return redirect('/')
         
-        return jsonify({'success': False, 'message': 'Invalid credentials'})
+        flash('Invalid username or password')
+        return redirect('/login')
     return render_template('login.html')
 
 @app.route('/logout', methods=['GET'])
